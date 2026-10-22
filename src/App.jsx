@@ -64,6 +64,8 @@ const formatDate = (dateStr) => {
   }
 };
 
+const getItemId = (item, idField = 'id') => item?.[idField] ?? item?.id ?? item?._id;
+
 // ==========================================
 // HTTP CLIENT WITH TIMEOUT & ERROR NORMALIZATION
 // ==========================================
@@ -564,11 +566,11 @@ const DashboardView = ({ onNavigate }) => {
             <div className="space-y-3">
               {stats.lowStockItems.map((prod) => (
                 <div 
-                  key={prod.id || prod._id} 
+                  key={getItemId(prod, 'idProducto')} 
                   className="flex items-center justify-between p-3 bg-[#FBF3E0] border-2 border-[#3E2723] rounded-xl font-bold text-sm"
                 >
                   <div>
-                    <p className="font-black text-[#3E2723] uppercase">{prod.nombre}</p>
+                    <p className="font-black text-[#3E2723] uppercase">{prod.nombreProducto}</p>
                     <p className="text-xs text-[#3E2723]/70">{formatCOP(prod.precio)}</p>
                   </div>
                   <span className="px-3 py-1 bg-[#D94452] text-white border-2 border-[#3E2723] rounded-lg font-black text-xs uppercase shadow-[2px_2px_0px_#3E2723]">
@@ -605,12 +607,12 @@ const DashboardView = ({ onNavigate }) => {
             <div className="space-y-3">
               {stats.ultimasVentas.map((v) => (
                 <div 
-                  key={v.id || v._id} 
+                  key={getItemId(v, 'idVenta')} 
                   className="flex items-center justify-between p-3 bg-[#FBF3E0] border-2 border-[#3E2723] rounded-xl font-bold text-sm"
                 >
                   <div>
                     <p className="font-black text-[#3E2723] uppercase">
-                      Venta #{v.id || v._id?.toString().slice(-4)}
+                      Venta #{v.idVenta}
                     </p>
                     <p className="text-xs text-[#3E2723]/70">{formatDate(v.fecha || v.created_at)}</p>
                   </div>
@@ -637,6 +639,7 @@ const CRUDView = ({
   title, 
   icon: Icon, 
   endpoint, 
+  idField = 'id',
   columns, 
   canCreate, 
   canEdit, 
@@ -710,7 +713,7 @@ const CRUDView = ({
       }
 
       const isEdit = !!editingItem;
-      const url = isEdit ? `${endpoint}/${editingItem.id || editingItem._id}` : endpoint;
+       const url = isEdit ? `${endpoint}/${getItemId(editingItem, idField)}` : endpoint;
       const method = isEdit ? 'PUT' : 'POST';
 
       await fetchWithAuth(url, {
@@ -838,7 +841,7 @@ const CRUDView = ({
               </thead>
               <tbody className="divide-y-2 divide-[#3E2723]/10 font-bold text-sm">
                 {items.map((item, idx) => (
-                  <tr key={item.id || item._id || idx} className="hover:bg-[#FBF3E0]/50 transition-colors">
+                   <tr key={getItemId(item, idField) || idx} className="hover:bg-[#FBF3E0]/50 transition-colors">
                     {columns.map((col, cIdx) => (
                       <td key={cIdx} className="p-4">
                         {col.render ? col.render(item) : item[col.accessor]}
@@ -858,7 +861,7 @@ const CRUDView = ({
                           )}
                           {canDelete && (
                             <button
-                              onClick={() => setDeleteConfirmId(item.id || item._id)}
+                               onClick={() => setDeleteConfirmId(getItemId(item, idField))}
                               className="p-2 bg-[#D94452] text-white hover:bg-[#b53240] border-2 border-[#3E2723] rounded-lg shadow-[2px_2px_0px_#3E2723] transition-all"
                               title="Eliminar"
                             >
@@ -878,7 +881,7 @@ const CRUDView = ({
           <div className="md:hidden space-y-3">
             {items.map((item, idx) => (
               <div 
-                key={item.id || item._id || idx} 
+                 key={getItemId(item, idField) || idx} 
                 className="bg-white border-2 border-[#3E2723] rounded-xl p-4 shadow-[4px_4px_0px_#3E2723] space-y-2"
               >
                 {columns.map((col, cIdx) => (
@@ -899,7 +902,7 @@ const CRUDView = ({
                     )}
                     {canDelete && (
                       <button
-                        onClick={() => setDeleteConfirmId(item.id || item._id)}
+                         onClick={() => setDeleteConfirmId(getItemId(item, idField))}
                         className="px-3 py-1.5 bg-[#D94452] text-white border-2 border-[#3E2723] rounded-lg font-black text-xs uppercase"
                       >
                         Eliminar
@@ -1054,18 +1057,16 @@ const ClientesView = ({ onShowToast }) => {
   const canManage = isAdmin || user?.rol === 'VENTAS';
 
   const columns = [
-    { header: 'Nombre / Razón Social', accessor: 'nombre' },
-    { header: 'Documento / NIT', accessor: 'documento' },
+    { header: 'Nombre / Razón Social', accessor: 'nombreCliente' },
     { header: 'Teléfono', accessor: 'telefono' },
-    { header: 'Email', accessor: 'email' },
+    { header: 'Email', accessor: 'correo' },
     { header: 'Dirección', accessor: 'direccion' },
   ];
 
   const formFields = [
-    { name: 'nombre', label: 'Nombre Completo', required: true },
-    { name: 'documento', label: 'Documento o NIT', required: true },
+    { name: 'nombreCliente', label: 'Nombre Completo', required: true },
     { name: 'telefono', label: 'Teléfono' },
-    { name: 'email', label: 'Correo Electrónico', type: 'email' },
+    { name: 'correo', label: 'Correo Electrónico', type: 'email' },
     { name: 'direccion', label: 'Dirección de Entrega' },
   ];
 
@@ -1074,6 +1075,7 @@ const ClientesView = ({ onShowToast }) => {
       title="Clientes"
       icon={Users}
       endpoint="/api/clientes"
+      idField="idCliente"
       columns={columns}
        canCreate={canManage}
        canEdit={canManage}
@@ -1093,19 +1095,17 @@ const ProveedoresView = ({ onShowToast }) => {
   const canManage = isAdmin || user?.rol === 'ALMACEN';
 
   const columns = [
-    { header: 'Empresa / Nombre', accessor: 'nombre' },
-    { header: 'NIT / Cédula', accessor: 'nit' },
-    { header: 'Contacto', accessor: 'contacto' },
-    { header: 'Teléfono', accessor: 'telefono' },
-    { header: 'Insumos / Productos', accessor: 'insumos' },
+    { header: 'Empresa / Nombre', accessor: 'nombreProveedor' },
+    { header: 'Teléfono', accessor: 'telefonoProveedor' },
+    { header: 'Correo', accessor: 'correoProveedor' },
+    { header: 'Dirección', accessor: 'direccionProveedor' },
   ];
 
   const formFields = [
-    { name: 'nombre', label: 'Nombre / Empresa', required: true },
-    { name: 'nit', label: 'NIT / Identificación', required: true },
-    { name: 'contacto', label: 'Persona de Contacto' },
-    { name: 'telefono', label: 'Teléfono' },
-    { name: 'insumos', label: 'Insumos que Proveé (e.g. Guayaba, Hojas de Bijao, Azúcar)' },
+    { name: 'nombreProveedor', label: 'Nombre / Empresa', required: true },
+    { name: 'telefonoProveedor', label: 'Teléfono' },
+    { name: 'correoProveedor', label: 'Correo Electrónico', type: 'email' },
+    { name: 'direccionProveedor', label: 'Dirección' },
   ];
 
   return (
@@ -1113,6 +1113,7 @@ const ProveedoresView = ({ onShowToast }) => {
       title="Proveedores"
       icon={Truck}
       endpoint="/api/proveedores"
+      idField="idProveedor"
       columns={columns}
        canCreate={canManage}
        canEdit={canManage}
@@ -1133,7 +1134,7 @@ const ProductosView = ({ onShowToast }) => {
   const canManage = isAdmin || isAlmacen;
 
   const columns = [
-    { header: 'Producto', accessor: 'nombre' },
+    { header: 'Producto', accessor: 'nombreProducto' },
     { 
       header: 'Precio', 
       render: (item) => <span className="font-black text-[#3F9B4F]">{formatCOP(item.precio)}</span>
@@ -1148,14 +1149,14 @@ const ProductosView = ({ onShowToast }) => {
         </span>
       )
     },
-    { header: 'Descripción', accessor: 'descripcion' },
+    { header: 'Tipo / Presentación', accessor: 'tipo' },
   ];
 
   const formFields = [
-    { name: 'nombre', label: 'Nombre del Bocadillo', required: true },
+    { name: 'nombreProducto', label: 'Nombre del Bocadillo', required: true },
     { name: 'precio', label: 'Precio (COP - Ej: 12000.00)', required: true },
     { name: 'stock', label: 'Stock Inicial', type: 'number', required: true, defaultValue: 10 },
-    { name: 'descripcion', label: 'Descripción / Presentación (Ej: Lonja, Cojinete, Hoja)', type: 'textarea' },
+    { name: 'tipo', label: 'Tipo / Presentación (Ej: Lonja, Cojinete, Hoja)' },
   ];
 
   // Price formatting requirement: send as text with 2 decimals
@@ -1177,6 +1178,7 @@ const ProductosView = ({ onShowToast }) => {
       title="Productos"
       icon={Package}
       endpoint="/api/productos"
+      idField="idProducto"
       columns={columns}
       canCreate={canManage}
       canEdit={canManage}
@@ -1237,7 +1239,7 @@ const NuevaVentaView = ({ onNavigate, onShowToast }) => {
   // Informational calculation only! NEVER sent to backend.
   const estimatedTotal = useMemo(() => {
     return detalles.reduce((sum, item) => {
-      const prod = productos.find((p) => (p.id || p._id)?.toString() === item.idProducto?.toString());
+      const prod = productos.find((p) => p.idProducto?.toString() === item.idProducto?.toString());
       if (!prod) return sum;
       const price = typeof prod.precio === 'string' ? parseFloat(prod.precio) : prod.precio;
       const qty = parseInt(item.cantidad, 10) || 0;
@@ -1340,8 +1342,8 @@ const NuevaVentaView = ({ onNavigate, onShowToast }) => {
           >
             <option value="">-- SELECCIONAR CLIENTE --</option>
             {clientes.map((c) => (
-              <option key={c.id || c._id} value={c.id || c._id}>
-                {c.nombre} - {c.documento}
+                <option key={c.idCliente} value={c.idCliente}>
+                  {c.nombreCliente}
               </option>
             ))}
           </select>
@@ -1363,7 +1365,6 @@ const NuevaVentaView = ({ onNavigate, onShowToast }) => {
           </div>
 
           {detalles.map((item, idx) => {
-            const selectedProd = productos.find((p) => (p.id || p._id)?.toString() === item.idProducto?.toString());
             return (
               <div key={idx} className="p-4 bg-[#FBF3E0] border-2 border-[#3E2723] rounded-xl flex flex-col sm:flex-row items-end gap-3 relative">
                 <div className="flex-1 w-full">
@@ -1378,8 +1379,8 @@ const NuevaVentaView = ({ onNavigate, onShowToast }) => {
                   >
                     <option value="">-- ELEGIR PRODUCTO --</option>
                     {productos.map((p) => (
-                      <option key={p.id || p._id} value={p.id || p._id}>
-                        {p.nombre} (Stock: {p.stock}) - {formatCOP(p.precio)}
+                      <option key={p.idProducto} value={p.idProducto}>
+                        {p.nombreProducto} (Stock: {p.stock}) - {formatCOP(p.precio)}
                       </option>
                     ))}
                   </select>
@@ -1563,16 +1564,16 @@ const VentasView = ({ onNavigate, onShowToast }) => {
                 </tr>
               </thead>
               <tbody className="divide-y-2 divide-[#3E2723]/10 font-bold text-sm">
-                {ventas.map((v) => (
-                  <tr key={v.id || v._id} className="hover:bg-[#FBF3E0]/50 transition-colors">
-                    <td className="p-4 font-black">#{v.id || v._id?.toString().slice(-6)}</td>
+                 {ventas.map((v) => (
+                   <tr key={v.idVenta} className="hover:bg-[#FBF3E0]/50 transition-colors">
+                     <td className="p-4 font-black">#{v.idVenta}</td>
                     <td className="p-4 text-xs">{formatDate(v.fecha || v.created_at)}</td>
-                    <td className="p-4 uppercase">{v.clienteNombre || v.cliente?.nombre || 'Cliente General'}</td>
+                     <td className="p-4 uppercase">Cliente #{v.idCliente}</td>
                     <td className="p-4 font-black text-[#3F9B4F]">{formatCOP(v.total)}</td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => handleOpenDetail(v.id || v._id)}
+                           onClick={() => handleOpenDetail(v.idVenta)}
                           className="p-2 bg-[#FBF3E0] border-2 border-[#3E2723] rounded-lg shadow-[2px_2px_0px_#3E2723]"
                           title="Ver Detalle"
                         >
@@ -1580,7 +1581,7 @@ const VentasView = ({ onNavigate, onShowToast }) => {
                         </button>
                         {isAdmin && (
                           <button
-                            onClick={() => setDeleteConfirmId(v.id || v._id)}
+                             onClick={() => setDeleteConfirmId(v.idVenta)}
                             className="p-2 bg-[#D94452] text-white border-2 border-[#3E2723] rounded-lg shadow-[2px_2px_0px_#3E2723]"
                             title="Eliminar Venta"
                           >
@@ -1597,23 +1598,23 @@ const VentasView = ({ onNavigate, onShowToast }) => {
 
           {/* Mobile View */}
           <div className="md:hidden space-y-3">
-            {ventas.map((v) => (
-              <div key={v.id || v._id} className="bg-white border-2 border-[#3E2723] rounded-xl p-4 shadow-[4px_4px_0px_#3E2723] space-y-2">
+             {ventas.map((v) => (
+               <div key={v.idVenta} className="bg-white border-2 border-[#3E2723] rounded-xl p-4 shadow-[4px_4px_0px_#3E2723] space-y-2">
                 <div className="flex justify-between items-center">
-                  <span className="font-['Rubik'] font-black text-sm uppercase">Venta #{v.id || v._id?.toString().slice(-6)}</span>
+                   <span className="font-['Rubik'] font-black text-sm uppercase">Venta #{v.idVenta}</span>
                   <span className="font-black text-[#3F9B4F]">{formatCOP(v.total)}</span>
                 </div>
                 <p className="text-xs font-bold text-[#3E2723]/70">{formatDate(v.fecha || v.created_at)}</p>
                 <div className="pt-2 border-t border-[#3E2723]/20 flex justify-end gap-2">
                   <button
-                    onClick={() => handleOpenDetail(v.id || v._id)}
+                     onClick={() => handleOpenDetail(v.idVenta)}
                     className="px-3 py-1 bg-[#FBF3E0] border-2 border-[#3E2723] rounded-lg font-black text-xs uppercase"
                   >
                     Ver Detalle
                   </button>
                   {isAdmin && (
                     <button
-                      onClick={() => setDeleteConfirmId(v.id || v._id)}
+                       onClick={() => setDeleteConfirmId(v.idVenta)}
                       className="px-3 py-1 bg-[#D94452] text-white border-2 border-[#3E2723] rounded-lg font-black text-xs uppercase"
                     >
                       Eliminar
@@ -1645,7 +1646,7 @@ const VentasView = ({ onNavigate, onShowToast }) => {
           <div className="bg-white border-2 border-[#3E2723] rounded-2xl max-w-lg w-full p-6 shadow-[8px_8px_0px_#3E2723] relative max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4 pb-3 border-b-2 border-[#3E2723]">
               <h2 className="font-['Rubik'] font-black text-lg uppercase text-[#3E2723]">
-                Comprobante Venta #{selectedVenta.id || selectedVenta._id?.toString().slice(-6)}
+                 Comprobante Venta #{selectedVenta.idVenta}
               </h2>
               <button onClick={() => setSelectedVenta(null)} className="p-1 hover:bg-[#FBF3E0] rounded-lg border-2 border-[#3E2723]">
                 <X className="w-5 h-5" />
@@ -1655,7 +1656,7 @@ const VentasView = ({ onNavigate, onShowToast }) => {
             <div className="space-y-4 font-bold text-sm">
               <div className="p-3 bg-[#FBF3E0] border-2 border-[#3E2723] rounded-xl space-y-1">
                 <p><span className="font-black text-xs uppercase text-[#3E2723]/60">Fecha:</span> {formatDate(selectedVenta.fecha || selectedVenta.created_at)}</p>
-                <p><span className="font-black text-xs uppercase text-[#3E2723]/60">Cliente:</span> {selectedVenta.clienteNombre || selectedVenta.cliente?.nombre || 'N/A'}</p>
+                 <p><span className="font-black text-xs uppercase text-[#3E2723]/60">Cliente:</span> Cliente #{selectedVenta.idCliente}</p>
               </div>
 
               <div>
@@ -1664,7 +1665,7 @@ const VentasView = ({ onNavigate, onShowToast }) => {
                   {(selectedVenta.detalles || []).map((d, idx) => (
                     <div key={idx} className="p-3 bg-white flex justify-between items-center">
                       <div>
-                        <p className="font-black uppercase text-xs">{d.productoNombre || d.producto?.nombre || `Prod #${d.idProducto}`}</p>
+                       <p className="font-black uppercase text-xs">{`Prod #${d.idProducto}`}</p>
                         <p className="text-[10px] text-[#3E2723]/60">{d.cantidad} x {formatCOP(d.precioUnitario || d.precio)}</p>
                       </div>
                       <span className="font-black text-xs text-[#3F9B4F]">
